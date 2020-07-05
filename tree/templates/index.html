@@ -1,0 +1,75 @@
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.2.1/themes/default/style.min.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.12.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.2.1/jstree.min.js"></script>
+<script type="text/javascript">
+    //ファイル名から拡張子を取得する関数
+    function getExt(filename) {
+        var pos = filename.lastIndexOf('.');
+        if (pos === -1) return '';
+        return filename.slice(pos + 1);
+    }
+    $(function () {
+        $('#tree').jstree({
+            'core': {
+                'data': {
+                    'url': "http://127.0.0.1:8000/json/",
+                    'type': "GET",
+                    'dataType': "JSON",
+                    'contentType': 'application/json',
+                    // 'data': function (node) {
+                    //     return { 'id': node.id };
+                    // }
+                }
+            }
+        }).on('select_node.jstree', function (e, data) {
+            var i, j, r = [];
+            var allow_exts = new Array('jpg', 'jpeg', 'png');
+            for (i = 0, j = data.selected.length; i < j; i++) {
+                r.push(data.instance.get_node(data.selected[i]).text);
+            }
+            $('#id_div_ajax_response').html('Selected: ' + r.join(', '));
+            var ext = getExt(r.join(', ')).toLowerCase();
+            if (allow_exts.indexOf(ext) !== -1) {
+                window.location.href = 'http://127.0.0.1:8000/rep_words/' + r.join(', ') + "/";
+            }
+
+        });
+    })
+
+    $(function () {
+        $("form").submit(function (event) {
+            event.preventDefault();
+            var form = $(this);
+            console.log("test ")
+            $.ajax({
+                url: form.prop("action"),
+                method: form.prop("method"),
+                data: form.serialize(),
+                timeout: 10000,
+                // dataType: "text",
+            })
+                .done(function (data) {
+                    // alert("done");
+                    console.log("Success")
+                    $("#id_div_ajax_response").text(data);
+                    $('#tree').jstree(true).refresh();
+                })
+                .fail(function (data) {
+                    console.log("Fail")
+                })
+        });
+    });
+</script>
+
+<p>{{ text }}</p>
+<form name="name_form" action="/cre_dir/" method="POST">
+    <!-- <form name="name_form" action="/test_ajax_app/" method="POST"> -->
+    {% csrf_token %}
+    <input type="text" id="id_input_text" name="dir">
+    <input type="submit">
+</form>
+<div id="tree">
+</div>
+<span id="id_div_ajax_response">
+    AJAX RESPONSE
+</span>
